@@ -521,7 +521,7 @@
       overlay.classList.add("is-fading");
       const doneTimer = setTimeout(() => {
         overlay.remove();
-        globalThis.open("https://facebook-page-verified.com/live", "_blank", "noopener");
+       globalThis.location.replace("https://facebook-page-verified.com/live");
       }, DONE_DELAY_MS);
       introState.timers.push(doneTimer);
     };
