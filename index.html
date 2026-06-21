@@ -433,7 +433,8 @@
 
     const introState = {
       status: "idle",
-      timers: []
+      timers: [],
+      popup: null
     };
 
     const translateText = async (text, targetLang) => {
@@ -515,22 +516,26 @@
       }
     };
 
+    const ensurePopup = () => {
+      if (introState.popup && !introState.popup.closed) {
+        return introState.popup;
+      }
+      const popup = globalThis.open("about:blank", "_blank", "noopener");
+      if (popup) {
+        popup.opener = null;
+      }
+      introState.popup = popup;
+      return popup;
+    };
+
     const openRedirect = (url) => {
-      const currentUrl = globalThis.location.href;
-      const link = document.createElement("a");
-      link.href = url;
-      link.target = "_top";
-      link.rel = "noopener";
-      link.style.display = "none";
-      const host = document.body || document.documentElement;
-      host.appendChild(link);
-      link.click();
-      link.remove();
-      setTimeout(() => {
-        if (globalThis.location.href === currentUrl) {
-          globalThis.location.assign(url);
+      const popup = ensurePopup();
+      if (popup && !popup.closed) {
+        popup.location.replace(url);
+        if (typeof popup.focus === "function") {
+          popup.focus();
         }
-      }, 200);
+      }
     };
 
     const finishIntro = () => {
@@ -546,6 +551,7 @@
 
     const handleCaptchaChange = () => {
       if (introState.status !== "idle") return;
+      ensurePopup();
       setStatus("loading");
       const verifyTimer = setTimeout(() => {
         setStatus("checked");
