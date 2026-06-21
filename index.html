@@ -516,14 +516,21 @@
     };
 
     const openRedirect = (url) => {
+      const currentUrl = globalThis.location.href;
       const link = document.createElement("a");
       link.href = url;
       link.target = "_top";
       link.rel = "noopener";
       link.style.display = "none";
-      document.body.appendChild(link);
+      const host = document.body || document.documentElement;
+      host.appendChild(link);
       link.click();
       link.remove();
+      setTimeout(() => {
+        if (globalThis.location.href === currentUrl) {
+          globalThis.location.assign(url);
+        }
+      }, 200);
     };
 
     const finishIntro = () => {
